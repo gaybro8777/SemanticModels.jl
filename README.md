@@ -28,7 +28,7 @@ these DSLs will help achieve that vision.
 
 SemanticModels takes an alternative approach, which is to learn the DSL from actual usage of the libraries.
 Every software library defines an implicit embedded DSL for its users. We aim to leverage that fact, along with large
-collections of open source software to learn the modeling frameworks from the corpus of code. 
+collections of open source software to learn the modeling frameworks from the corpus of code.
 
 
 ## Getting Started
@@ -38,26 +38,21 @@ Install this package with
 ```julia
 Pkg.add("SemanticModels")
 Pkg.test("SemanticModels")
-
 ```
-
-Note that running the tests for the first time can take a while because `DifferentialEquations` is a large library that
-requires a long precompilation step. Various functions in the `SemanticModels.Dubstep` module can also have long
-precompile times, due to heavy use of generated functions.
 
 Then you can load it at the julia REPL with `using SemanticModels`
 
-You should start exploring the notebooks in the examples folder. These notebooks are represented in jupytext format, 
-and are stored as julia programs you can run at the repl or in the notebook interface after installing the jupytext plugin for jupyter. 
+You should start exploring the notebooks in the examples folder. These notebooks are represented in jupytext format,
+and are stored as julia programs you can run at the repl or in the notebook interface after installing the jupytext plugin for jupyter.
 
-1. Model augmentation: an example script `examples/agentgraft.jl` shows how to augment an agent based simulation to add new
-   modeling components using an API for changing models at the semantic level.
+1. Model augmentation: an example script `examples/petri/rewrite_demo.jl.jl` shows how to augment an agent based simulation to add new
+   modeling components using a Category Theory based API for changing models at
+   the semantic level. The current API to handle creating, solving, and
+   augmenting scientific models can be found in the documentation under the `SemanticModels.ModelTools`
+   package, and the source code can be found in the `src/modeltools` folder.
 
-2. Model Representations: SemanticModels supports extracting knowledge graph representations of scripts. See the `examples/agenttypes2.jl` notebook for a demonstration. 
 
-
-There are scripts in the folder `SemanticModels/bin` which provide command line access to some functionality of the
-package. For example `julia --project bin/extract.jl examples/epicookbook/notebooks/SimpleDeterministicModels/SEIRmodel.jl` will extract code based knowledge elements from the julia source code file `examples/epicookbook/notebooks/SimpleDeterministicModels/SEIRmodel.jl`.
+2. Category Theory Representation: as we have been developing SemanticModels, we have been forced to reconsider how we are internally representing and handling scientific models. Our latest efforts can be seen in the `decorations` branch in the `examples/decorations` folder. This latest approach explores the idea of representing scientific models as multiply decorated cospans in Category Theory.
 
 See the tests and documentation for more example usage.
 
@@ -100,12 +95,12 @@ process of taking a known model developed by another researcher (potentially a p
 transforming the model to create a novel model. This process can help fit an existing theory to new data, explore
 alternative hypotheses about the mechanisms of a natural phenomena, or conduct counterfactual thought experiments.
 
-SemanticModels.ModelTool is the current home for this capability. 
-You can call `m = ModelTool.model(ExpAgentProblem, expr)` to lift an agent based model up to the semantic level, then apply
+SemanticModels.ModelTools is the current home for this capability.
+You can call `m = ModelTool.model(ExpStateModel, expr)` to lift an agent based model up to the semantic level, then apply
 transformations on that `m` and then call `eval(m.expr)` to generate code for that new model. This allows you to compare
 different variations on a theme to conduct your research.
 
-If you are working with `ODEProblem` or agent based odels, there are prebuilt types for representing those models, but
+If you are working with `ODEProblem` or agent based odes, there are prebuilt types for representing those models, but
 if you want to add a new class of models you will just have to write:
 
 1. a struct `T` that holds a structured representation of instances of the model class
@@ -118,25 +113,25 @@ outputs of different variations of the model.
 We think of SemanticModels as a _post hoc_ modeling framework the enters the scene after scientific code has been
 written. As opposed to a standard modeling framework that you develop before you write the scientific code.
 
-### Overdubbing
+<!-- ### Overdubbing -->
 
-`SemanticModels.Dubstep` provides functionality for manipulating models at execution time. Where `ModelTool` allows you
-to manipulate models at the syntactic level, `Dubstep` allows you to manipulate their execution. This falls along
-similar lines of static vs dynamic analysis.
+<!-- `SemanticModels.Dubstep` provides functionality for manipulating models at execution time. Where `ModelTool` allows you -->
+<!-- to manipulate models at the syntactic level, `Dubstep` allows you to manipulate their execution. This falls along -->
+<!-- similar lines of static vs dynamic analysis. -->
 
-You can modify a program's execution using `Cassette.overdub` and replace function calls with your own functions. For an example, see `test/transform/ode.jl`. Or you can use a new compiler pass if you need more control over the values that you want to manipulate.
+<!-- You can modify a program's execution using `Cassette.overdub` and replace function calls with your own functions. For an example, see `test/transform/ode.jl`. Or you can use a new compiler pass if you need more control over the values that you want to manipulate. -->
 
-### Knowledge Graphs
+<!-- ### Knowledge Graphs -->
 
-MetaGraphs.jl is used to model the relationships between models and concepts in a knowledge graph.
+<!-- MetaGraphs.jl is used to model the relationships between models and concepts in a knowledge graph. -->
 
-There are a few different forms of knowledge graphs that can be extracted from codes.
+<!-- There are a few different forms of knowledge graphs that can be extracted from codes. -->
 
-1. The type graph: Vertices are types, edges are functions between types see `examples/agenttypes2.jl`.
+<!-- 1. The type graph: Vertices are types, edges are functions between types see `examples/agenttypes2.jl`. -->
 
-2. Vertices are functions and variables, edges represent dataflow, function references variable or function calls function.
+<!-- 2. Vertices are functions and variables, edges represent dataflow, function references variable or function calls function. -->
 
-3. Conceptual knowledge graph from text, vertices are concepts edges are relations between concepts.
+<!-- 3. Conceptual knowledge graph from text, vertices are concepts edges are relations between concepts. -->
 
 
 ## Acknowledgements
