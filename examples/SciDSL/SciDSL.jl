@@ -7,6 +7,8 @@ import Catlab.WiringDiagrams: WiringDiagram
 using Catlab.Doctrines
 import Catlab.Graphics: to_graphviz
 import Catlab.Graphics.Graphviz: run_graphviz
+using ModelingToolkit
+import ModelingToolkit: Operation
 
 abstract type Framework end
 
@@ -173,6 +175,23 @@ function WiringDiagram(frm::Framework, t::Tree)
     end
 end
 
+function WiringDiagram(frm::Framework, typedict::Dict, t::Operation)
+    @show t
+    @show fname = nameof(t.op)
+    if length(t.args) == 0
+        println("Base Case")
+        x = typedict[Symbol(t.op)]
+        return WiringDiagram(Ports([objects(frm)[x]]), Ports([objects(frm)[x]]))
+    end
+    println("Recursive Case")
+    f = morphisms(frm)[fname]
+    args = map(t.args) do x
+        WiringDiagram(frm, typedict, x)
+    end
+    return compose(foldl(otimes, args), WiringDiagram(f))
+    # return t
+end
+
 striptypes(args) = map(args[2:end]) do arg
     arg.args[1]
 end
@@ -192,6 +211,23 @@ macro wiring(ctx, sig, body)
     return funcdef(fname, argnames, body)
 end
 
+using ModelingToolkit
+
+macro wiring_toolkit(ctx, sig, body)
+    argnames = striptypes(sig.args)
+    typedict = Dict(a.args[1]=>a.args[2] for a in sig.args[2:end])
+    fname = sig.args[1]
+    f = funcdef(fname, argnames, body)
+    vars =:(@variables $(argnames...))
+    q = quote
+        $f
+        $vars
+        result = $fname($(argnames...))
+        WiringDiagram($ctx, $typedict, result)
+    end
+    return q
+end
+
 create(f::Framework, v, T) = Value(f, v, T)
 
 frm = @framework Foo begin
@@ -208,17 +244,20 @@ g(x::Float64) = floor(Int, x)
 h(x::Int,y::Int) = x - y*y
 
 # f.diagrams[end] = compose(f.diagrams[end], f)
+# A, B = frm.objects[:A], frm.objects[:B]
+# f(x::Value) =  Value(x.framework, f(x.value), B)
+# g(x::Value) =  Value(x.framework, g(x.value), A)
+# h(x::Value, y::Value) =  Value(x.framework, h(x.value, y.value), B)
 
-A, B = frm.objects[:A], frm.objects[:B]
-f(x::Value) =  Value(x.framework, f(x.value), B)
-g(x::Value) =  Value(x.framework, g(x.value), A)
-h(x::Value, y::Value) =  Value(x.framework, h(x.value, y.value), B)
+@register f(x)
+@register g(x)
+@register h(x,y)
 
-function prog(frm)
-    x = create(frm, 2, frm.objects[:A])
-    y = g(f(x))
-    z = h(x, y)
-end
+# function prog(frm)
+#     x = create(frm, 2, frm.objects[:A])
+#     y = g(f(x))
+#     z = h(x, y)
+# end
 
 @wiring frm prog(x::A) begin
     y = g(f(x))
@@ -226,17 +265,57 @@ end
     return z
 end
 
-
 @show frm.diagrams[1]
+
+operation = @wiring_toolkit frm prog(x::A) begin
+    y = g(f(x))
+    z = h(x, y)
+    return z
+end
+@show operation
 # TODO: debug diagram
 # @code_lowered prog(frm)
 
 function writesvg(f::Union{IO,AbstractString}, d::WiringDiagram)
-    write(f, to_graphviz(d, labels=true)
-          |>g->run_graphviz(g, format="svg")
+    write(f, ( (to_graphviz(d, labels=true)) |> g->@show run_graphviz(g, format="svg") )
           )
 end
 
 # TODO: debug display
 writesvg("dsl1.svg", frm.diagrams[1])
 end
+
+epi = @framework Epi begin
+    @obj P Person
+
+    @hom :f :spontaneous  [P] => [P]
+    @hom :g :interaction  [P, P] => [P, P]
+    @hom :h :triple       [P, P, P] => [P, P, P]
+end
+
+@wiring epi SIRS(s::P, i::P) begin
+    i,i = g(s,i)
+    r = f(i)
+    d = f(i)
+    s = f(r)
+end
+
+
+epi = @framework Epi begin
+    @obj S Person
+    @obj I Person
+    @obj R Person
+    @obj D Person
+
+    @hom :f :infect  [S, I] => [I I]
+    @hom :g :recover [I] => [R]
+    @hom :j :wane    [R] => [S]
+    @hom :h :die     [I] => [D]
+end
+
+@wiring epi SIRS(s::S, i::I) begin
+    i1, i2 = infect(s,i)
+    r, d   = recover(i1), die(i2)
+    w      = wane(r)
+    return w, d
+end # returns a morphism from S⊗I → S⊗D
