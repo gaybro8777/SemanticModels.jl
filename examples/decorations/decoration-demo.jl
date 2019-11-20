@@ -13,7 +13,6 @@ import Catlab.Graphics: to_tikz
 
 import MacroTools: postwalk
 function devar(p::Petri.Model)
-    println(p.S)
     vars = Symbol[]
     map(p.S) do S
         postwalk(convert(Expr, S)) do ex
