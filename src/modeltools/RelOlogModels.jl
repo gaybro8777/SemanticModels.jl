@@ -12,12 +12,8 @@ using SemanticModels.ModelTools.CategoryTheory
 import SemanticModels.ModelTools.CategoryTheory: ⊔, FinSetMorph
 import SemanticModels.ModelTools: model
 
-export RelOlogModel, model, ⊔, ∘, ⊗, ⊚
+export RelOlogModel, model, ⊔
 
-⊗(a::WiringDiagram, b::WiringDiagram) = otimes(a,b)
-import Base: ∘
-∘(a::WiringDiagram, b::WiringDiagram) = compose(b, a)
-⊚(a,b) = b ∘ a
 
 struct RelOlogModel <: AbstractModel
   model::Presentation

@@ -1,25 +1,21 @@
 # -*- coding: utf-8 -*-
 module CategoryTheory
 
-using LightGraphs
 using SemanticModels
 using SemanticModels.ModelTools
 import Catlab.Doctrines: dom, codom
 using MacroTools: prewalk, postwalk
 using ModelingToolkit
 
-export ⊔, AbstractMorph, FinSetMorph, dom, codom, verify, func, GraphMorph, Decorated, decorations, undecorate, add_decoration!, add_decorations!, remove_decoration!, remove_decorations!, AbstractSpan, leftob, rightob, apexob, Span, left, right, DoublePushout, AbstractCospan, Cospan, pushout
+export ⊔, AbstractMorph, FinSetMorph, dom, codom, verify, func, Decorated, decorations, undecorate, add_decoration!, add_decorations!, remove_decoration!, remove_decorations!, AbstractSpan, leftob, rightob, apexob, Span, left, right, DoublePushout, AbstractCospan, Cospan, pushout
 
-# +
 import MacroTools.walk
 walk(x::Operation, inner, outer) = outer(Operation(x.op, map(inner, x.args)))
 
 
 ⊔(a::UnitRange, b::UnitRange) = 1:(length(a)+length(b))
 ⊔(a::AbstractVector{Int}, b::AbstractVector{Int}) = vcat(a,b)
-⊔(g::AbstractGraph, h::AbstractGraph) = blockdiag(g,h)
 
-# -
 
 """    AbstractMorph
 
@@ -33,7 +29,6 @@ where T is the type of the objects in the category. See FinSetMorph for an examp
 """
 abstract type AbstractMorph end
 
-# +
 """    FinSetMorph{T,F}
 
 morphisms in the category of Finite Sets. The objects are of type UnitRange{Int}.
@@ -72,64 +67,6 @@ function ⊔(f::FinSetMorph, g::FinSetMorph)
     FinSetMorph(Y, h)
 end
 
-function (f::FinSetMorph)(g::G) where G <: AbstractGraph
-    dom(f) == vertices(g) || throw(DomainError(vertices(g), "dom(f) = $(dom(f)) but nv(g) = $(nv(g))"))
-    ϕ = func(f)
-    map(edges(g)) do e
-        s,t = e.src, e.dst
-        Edge(ϕ(s), ϕ(t))
-    end |> Graph
-end
-
-# +
-"""    GraphMorph{T,F} <: Morph
-
-morphisms in the category of Finite Graphs. The objects must be a subtype of AbstractGraph.
-
-You can take a `FinSetMorph` and lift it to a graph homomorphism. This is the functor that
-takes the finite set `1:n`, to the empty graph with `n` vertices.
-
-"""
-struct GraphMorph{T, F} <: AbstractMorph
-    dom::T
-    codom::T
-    fun::F
-end
-
-"""    GraphMorph(g::AbstractGraph, f::FinSetMorph)
-
-is defined to be the graph homomorphism you get by functorially lifting `f`.
-That is, `f` acts on the vertex set of `g` as an `Int->Int` function, and then
-must act on the edges consistently.
-"""
-GraphMorph(g::AbstractGraph, f::FinSetMorph) = GraphMorph(g, f(g), f)
-
-dom(m::GraphMorph) = m.dom
-codom(m::GraphMorph) = m.codom
-func(m::GraphMorph) = begin
-    f = func(m.fun)
-    return i->f(i)
-end
-
-"""    verify(m::GraphMorph)
-
-validate a graph homomorphism by checking that all the edges in `dom(m)` and map to edges in `codom(m)`.
-"""
-verify(m::GraphMorph) = begin
-    dom(m.fun) == vertices(dom(m)) || return false
-    codom(m.fun) == vertices(codom(m)) || return false
-    E = Set(edges(codom(m)))
-    f = func(m)
-    map(edges(dom(m))) do e
-        u,v = f(e.src), f(e.dst)
-        if u > v
-            u,v = v,u
-        end
-        Edge(u,v) in E
-    end |> all
-end
-
-# +
 """    Decorated{M,T}
 
 a decoration applied to the objects of a morphism, where M is a type of morphism and
@@ -191,15 +128,6 @@ function right(d::Decorated)
   return right(d.f)
 end
 
-function left(d::Decorated)
-  return left(d.f)
-end
-
-function right(d::Decorated)
-  return right(d.f)
-end
-
-# +
 """    AbstractSpan
 
 an abstract type for representing spans. The essential API for subtypes of AbstractSpan are
@@ -224,7 +152,6 @@ function apexob(s::AbstractSpan)
     return a
 end
 
-# +
 """    Span{F,G} <: AbstractSpan
 
 a general span type where types F and G are types of morphisms in the span
@@ -250,7 +177,6 @@ function undecorate(s::Span{T,T}) where T <: Decorated
     return Span(undecorate(left(s)), undecorate(right(s)))
 end
 
-# +
 struct DoublePushout{S<:AbstractSpan, T<:NTuple{3,AbstractMorph}}
     rule::S
     morphs::T
@@ -290,7 +216,6 @@ function apexob(c::AbstractCospan)
     return a
 end
 
-# +
 """    Cospan{F,G} <: AbstractCospan
 
 a general cospan type where types F and G are types of morphisms in the cospan
@@ -316,7 +241,6 @@ function undecorate(c::Cospan{T,T}) where T <: Decorated
     return Cospan(undecorate(left(c)), undecorate(right(c)))
 end
 
-# +
 """    pushout(s::Span{T,T}) where T <: FinSetMorph
 
 treat f,g as a span and compute the pushout that is, the cospan of f=(f⊔g) and g=(a⊔b)
