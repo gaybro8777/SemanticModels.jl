@@ -32,3 +32,6 @@ for i in equations(seir)
     display(i[1])
     display(to_tikz(i[2]; arrowtip="Stealth", labels=true))
 end
+
+
+

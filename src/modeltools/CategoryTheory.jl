@@ -3,11 +3,12 @@ module CategoryTheory
 
 using LightGraphs
 using SemanticModels
+using SemanticModels.ModelTools
 import Catlab.Doctrines: dom, codom
 using MacroTools: prewalk, postwalk
 using ModelingToolkit
 
-export ⊔, AbstractMorph, FinSetMorph, dom, codom, verify, func, GraphMorph, Decorated, decoration, undecorate, AbstractSpan, leftob, rightob, apexob, Span, left, right, DoublePushout, AbstractCospan, Cospan, pushout
+export ⊔, AbstractMorph, FinSetMorph, dom, codom, verify, func, GraphMorph, Decorated, decorations, undecorate, add_decoration!, add_decorations!, remove_decoration!, remove_decorations!, AbstractSpan, leftob, rightob, apexob, Span, left, right, DoublePushout, AbstractCospan, Cospan, pushout
 
 # +
 import MacroTools.walk
@@ -134,18 +135,53 @@ end
 a decoration applied to the objects of a morphism, where M is a type of morphism and
 type T is the category of the decoration
 """
-struct Decorated{M,T}
+mutable struct Decorated{M}
     f::M
-    d::T
+    d::AbstractArray{AbstractModel}
 end
+
+# Handle creating a decorated morphism with an array of a single type
+Decorated(f, d::AbstractArray{T}) where T<:AbstractModel = Decorated(f, Vector{AbstractModel}(d))
+# Handle creating a decorated morphism from a single decoration
+Decorated(f, d::T) where T<:AbstractModel = Decorated(f, Vector{AbstractModel}([d]))
 
 # Get the domain or codomain of a decorated morphism
 dom(m::Decorated) = dom(m.f)
 codom(m::Decorated) = codom(m.f)
-# Get the decoration of a decorated morphism
-decoration(m::Decorated) = m.d
+
+# Get the decorations of a decorated morphism
+function decorations(m::Decorated)
+  return m.d
+end
+# Get the decorations of AbstractModel T of a decorated morphism
+function decorations(m::Decorated, ::Type{T}) where T<:AbstractModel
+  filter(x -> isa(x,T), decorations(m))
+end
+
 # Remove the decoration of a decorated morphism, and return the original morphism
-undecorate(m::Decorated) = m.f
+function undecorate(m::Decorated)
+  return m.f
+end
+
+# Add a decoration to a decorated morphism
+function add_decoration!(m::Decorated, decoration::AbstractModel)
+  push!(decorations(m), decoration)
+end
+
+# Add a collection of decorations to a decorated morphism
+function add_decorations!(m::Decorated, decorations)
+    m.d = vcat(m.d, decorations)
+end
+
+# remove a decoration from a decorated morphism
+function remove_decoration!(m::Decorated, i)
+  deleteat!(decorations(m), i)
+end
+
+# Remove the decorations of AbstractModel T from a decorated morphism
+function remove_decorations!(m::Decorated, ::Type{T}) where T<:AbstractModel
+  m.d = filter(x -> !isa(x,T), decorations(m))
+end
 
 function left(d::Decorated)
   return left(d.f)
@@ -299,8 +335,8 @@ with the decoration of (f⊔g)(d)
 """
 function pushout(s::Span{T, T}) where T <: Decorated
     cs = pushout(undecorate(s))
-    D = decoration(left(s)) ⊔ decoration(right(s))
-    return Decorated(cs, (right(cs) ⊔ left(cs))(D))
+    decorations = map(x->x[1] ⊔ x[2], zip(left(s).d, right(s).d))
+    return Decorated(cs, map((right(cs) ⊔ left(cs)), decorations))
 end
 
 end

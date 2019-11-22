@@ -58,17 +58,19 @@ H′ = CategoryTheory.pushout(s)
 
 # Create S -> I -> R model
 sir = Petri.Model([S, I, R], [(S+I, 2I), (I,R)])
+sir_model = model(PetriModel, sir)
 
 # Create Susceptible to 2 diseases model
 sii = Petri.Model([S, I, I′], [(S+I,  2I ), (S+I′, 2I′)])
+sii_model = model(PetriModel, sii)
 
 # Decorate a finite set with SIR
 f = FinSetMorph(1:3, [1, 2])
-dec_f = Decorated(f, sir)
+dec_f = Decorated(f, sir_model)
 
 # Decorate a finite set with SII
 g = FinSetMorph(1:3, [1, 2])
-dec_g = Decorated(g, sii)
+dec_g = Decorated(g, sii_model)
 
 # Create a span of decorated morphisms
 s = Span(dec_f, dec_g)
@@ -76,12 +78,7 @@ s = Span(dec_f, dec_g)
 # Solve the pushout that combines the two Petri decorations
 H = CategoryTheory.pushout(s)
 
-@show decoration(H).S
-@show decoration(H).Δ
-
-#@show typeof(H)
-
-#@show collect(edges(decoration(H)))
+map(petri->println(petri.model.S, "\n", petri.model.Δ), decorations(H, PetriModel))
 # -
 
 
