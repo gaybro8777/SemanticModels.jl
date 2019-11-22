@@ -112,6 +112,7 @@ function ⊔(gModel::PetriModel, hModel::PetriModel)
 end
 
 
+
 function (f::FinSetMorph)(gModel::G) where G <: PetriModel
     g = gModel.model
     length(dom(f)) == length(g.S) || throw(DomainError(g.S))

@@ -54,6 +54,7 @@ function (f::FinSetMorph)(gModel::G) where G <: RelOlogModel
     dict = Dict(states[i] => outS[ϕ(i)] for i in dom(f))
     # map renaming functor to relations
     g′ = Presentation()
+
     # get the states in the correct order
     add_generators!(g′, outS)
     map(x->begin if !has_generator(g′, x.args[1]) add_generator!(g′, x) end end, map(x->functor((FreeBicategoryRelations.Ob, FreeBicategoryRelations.Hom), x; generators=dict), generators(g)))

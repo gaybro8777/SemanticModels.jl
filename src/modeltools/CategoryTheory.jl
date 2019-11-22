@@ -191,6 +191,14 @@ function right(d::Decorated)
   return right(d.f)
 end
 
+function left(d::Decorated)
+  return left(d.f)
+end
+
+function right(d::Decorated)
+  return right(d.f)
+end
+
 # +
 """    AbstractSpan
 

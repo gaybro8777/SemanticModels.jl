@@ -82,6 +82,7 @@ f = FinSetMorph(1:3, [1, 2])
 g = FinSetMorph(1:3, [1, 2])
 # ### Decorate the Morphisms with a Petri Model
 # + {}
+
 sii_petriModel = model(PetriModel, sii_petri)
 sir_petriModel = model(PetriModel, sir_petri)
 
@@ -96,7 +97,9 @@ dec_g = Decorated(g, [sir_petriModel, sir_relModel])
 # ### Create Span and Solve Pushout
 
 # +
+
 S = Span(dec_f, dec_f)
+
 
 H = CategoryTheory.pushout(S)
 # -
@@ -104,6 +107,7 @@ H = CategoryTheory.pushout(S)
 # ### View New Models
 
 # +
+
 H_relolog = decorations(H, RelOlogModel)
 H_petri = decorations(H, PetriModel)
 
